@@ -1,5 +1,5 @@
 # timelyRV
-A RISC-V project
+A RISC-V project.
 
 
 #### Table of Contents
