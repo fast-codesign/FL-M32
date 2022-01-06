@@ -1,22 +1,11 @@
-# timelyRV
-A RISC-V project.
+# Ultraman
+A Pipelined RISC-V32i core.
 
 
 #### Table of Contents
 
-- [Files in this Repository](#files-in-this-repository)
+- Architecture(#Architecture)
 
 
-Files in this Repository
+Architecture
 ------------------------
-
-#### README.md
-
-You are reading it right now.
-
-#### Doc/
-
-This folder contains the following files:
-| Module                   | Description                                                           |
-| ------------------------ | --------------------------------------------------------------------- |
-| `设计手册.docx`           | 整体设计文档                                                           |
