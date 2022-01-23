@@ -1,0 +1,128 @@
+Archive member included to satisfy reference by file (symbol)
+
+/opt/riscv32i/lib/gcc/riscv32-unknown-elf/9.2.0/libgcc.a(div.o)
+                              GenHex/system.o (__udivsi3)
+
+Allocating common symbols
+Common symbol       size              file
+
+tag_can_send        0x4               GenHex/irq.o
+str_can_conf        0x20              GenHex/can.o
+
+Discarded input sections
+
+ .debug_line    0x0000000000000000      0x169 /opt/riscv32i/lib/gcc/riscv32-unknown-elf/9.2.0/libgcc.a(div.o)
+ .debug_info    0x0000000000000000       0x26 /opt/riscv32i/lib/gcc/riscv32-unknown-elf/9.2.0/libgcc.a(div.o)
+ .debug_abbrev  0x0000000000000000       0x14 /opt/riscv32i/lib/gcc/riscv32-unknown-elf/9.2.0/libgcc.a(div.o)
+ .debug_aranges
+                0x0000000000000000       0x20 /opt/riscv32i/lib/gcc/riscv32-unknown-elf/9.2.0/libgcc.a(div.o)
+ .debug_str     0x0000000000000000       0xad /opt/riscv32i/lib/gcc/riscv32-unknown-elf/9.2.0/libgcc.a(div.o)
+
+Memory Configuration
+
+Name             Origin             Length             Attributes
+mem              0x0000000000000000 0x000000000000c000
+*default*        0x0000000000000000 0xffffffffffffffff
+
+Linker script and memory map
+
+
+.memory         0x0000000000000000     0x1448
+                0x0000000000000000                . = 0x0
+ start*(.text)
+ *(.text)
+ .text          0x0000000000000000      0x6a0 GenHex/start.o
+                0x0000000000000000                reset_vec
+                0x0000000000000550                __irq_enable
+                0x000000000000055c                __irq_disable
+                0x0000000000000568                timer_enable
+ .text          0x00000000000006a0        0x0 GenHex/custom.o
+ .text          0x00000000000006a0      0x2e8 GenHex/system.o
+                0x00000000000006a0                print_chr
+                0x00000000000006ac                print_str
+                0x00000000000006c8                print_dec
+                0x0000000000000748                print_void
+                0x000000000000074c                print_hex
+                0x0000000000000904                printf
+                0x0000000000000940                sys_gettime
+                0x000000000000095c                sys_finish
+ .text          0x0000000000000988      0x1d8 GenHex/irq.o
+                0x0000000000000988                irq
+ .text          0x0000000000000b60      0x5ec GenHex/can.o
+                0x0000000000000b60                sleep
+                0x0000000000000b88                initial_can
+                0x0000000000000c7c                send_can
+                0x0000000000000d4c                recv_can_sensor_distance
+                0x0000000000000ea4                set_can_sensor_distance_sample_rate
+                0x0000000000000f74                start_can_sensor_distance
+                0x0000000000001040                stop_can_sensor_distance
+                0x000000000000110c                to_recv_can
+ .text          0x000000000000114c       0x1c GenHex/main.o
+                0x000000000000114c                hello
+ .text          0x0000000000001168       0xb4 /opt/riscv32i/lib/gcc/riscv32-unknown-elf/9.2.0/libgcc.a(div.o)
+                0x0000000000001168                __divsi3
+                0x0000000000001170                __udivsi3
+                0x00000000000011b8                __umodsi3
+                0x00000000000011ec                __modsi3
+ *(*)
+ .data          0x000000000000121c        0x0 GenHex/start.o
+ .bss           0x000000000000121c        0x0 GenHex/start.o
+ .riscv.attributes
+                0x000000000000121c       0x1a GenHex/start.o
+ .rela.text     0x0000000000001236        0x0 GenHex/start.o
+ .data          0x0000000000001236        0x0 GenHex/custom.o
+ .bss           0x0000000000001236        0x0 GenHex/custom.o
+ .riscv.attributes
+                0x0000000000001236       0x1a GenHex/custom.o
+ .data          0x0000000000001250        0x0 GenHex/system.o
+ .bss           0x0000000000001250        0x0 GenHex/system.o
+ .rodata.str1.4
+                0x0000000000001250       0x1d GenHex/system.o
+ .comment       0x000000000000126d       0x11 GenHex/system.o
+                                         0x12 (size before relaxing)
+ .riscv.attributes
+                0x000000000000127e       0x1c GenHex/system.o
+ .data          0x000000000000129a        0x0 GenHex/irq.o
+ .bss           0x000000000000129a        0x0 GenHex/irq.o
+ *fill*         0x000000000000129a        0x2 
+ .rodata.str1.4
+                0x000000000000129c       0xa5 GenHex/irq.o
+ .comment       0x0000000000001341       0x12 GenHex/irq.o
+ .riscv.attributes
+                0x0000000000001341       0x1c GenHex/irq.o
+ *fill*         0x000000000000135d        0x3 
+ COMMON         0x0000000000001360        0x4 GenHex/irq.o
+                0x0000000000001360                tag_can_send
+ .data          0x0000000000001364        0x0 GenHex/can.o
+ .bss           0x0000000000001364        0x0 GenHex/can.o
+ .rodata.str1.4
+                0x0000000000001364       0x5f GenHex/can.o
+ .comment       0x00000000000013c3       0x12 GenHex/can.o
+ .riscv.attributes
+                0x00000000000013c3       0x1c GenHex/can.o
+ *fill*         0x00000000000013df        0x1 
+ COMMON         0x00000000000013e0       0x20 GenHex/can.o
+                0x00000000000013e0                str_can_conf
+ .data          0x0000000000001400        0x0 GenHex/main.o
+ .bss           0x0000000000001400        0x0 GenHex/main.o
+ .rodata.str1.4
+                0x0000000000001400       0x10 GenHex/main.o
+                                          0xe (size before relaxing)
+ .comment       0x0000000000001410       0x12 GenHex/main.o
+ .riscv.attributes
+                0x0000000000001410       0x1c GenHex/main.o
+ .data          0x000000000000142c        0x0 /opt/riscv32i/lib/gcc/riscv32-unknown-elf/9.2.0/libgcc.a(div.o)
+ .bss           0x000000000000142c        0x0 /opt/riscv32i/lib/gcc/riscv32-unknown-elf/9.2.0/libgcc.a(div.o)
+ .riscv.attributes
+                0x000000000000142c       0x1a /opt/riscv32i/lib/gcc/riscv32-unknown-elf/9.2.0/libgcc.a(div.o)
+                0x0000000000001446                end = .
+                0x0000000000001448                . = ALIGN (0x4)
+ *fill*         0x0000000000001446        0x2 
+LOAD GenHex/start.o
+LOAD GenHex/custom.o
+LOAD GenHex/system.o
+LOAD GenHex/irq.o
+LOAD GenHex/can.o
+LOAD GenHex/main.o
+LOAD /opt/riscv32i/lib/gcc/riscv32-unknown-elf/9.2.0/libgcc.a
+OUTPUT(GenHex/firmware.elf elf32-littleriscv)
