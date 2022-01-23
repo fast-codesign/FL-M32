@@ -1,16 +1,21 @@
 /*
  *  picoSoC_hardware -- SoC Hardware for RISCV-32I core.
  *
- *  Copyright (C) 2021-2021 Junnan Li <lijunnan@nudt.edu.cn>.
+ *  Copyright (C) 2021-2022 Junnan Li <lijunnan@nudt.edu.cn>.
  *  Copyright and related rights are licensed under the MIT license.
  *
- *  Data: 2021.12.03
+ *  Lasted update date: 2022.01.19
  *  Description: This module is used to connect pico_top with configuration,
  *    and uart.
  */
 
-// `define GPIO_KEY
-// `define CAN
+`define BASE_ADDR_UART 16'h1001
+`define BASE_ADDR_GPIO 16'h1002
+`define BASE_ADDR_CAN 16'h1003
+
+// `define GPIO_KEY //* GPIO for key is open;
+`define CAN   //* CAN is open;
+`define LCD   //& lcd is open;
 
 module um_for_cpu(
   input               clk,
@@ -21,21 +26,23 @@ module um_for_cpu(
   output wire         data_out_valid,
   output wire [133:0] data_out,
 
-  input               clk_50m,
   input               uart_rx,
   output wire         uart_tx,
   input               uart_cts_i,
-
+  
   output reg          led_out,
 
-  // inout       [7:0]   can_ad,
-  // output wire         can_cs_n,
-  // output wire         can_ale,
-  // output wire         can_wr_n,
-  // output wire         can_rd_n,
-  // input               can_int_n,
-  // output reg          can_rst_n,
-  // output wire         can_mode,
+  inout       [7:0]   can_ad,
+  output wire         can_cs_n,
+  output wire         can_ale,
+  output wire         can_wr_n,
+  output wire         can_rd_n,
+  input               can_int_n,
+  output reg          can_rst_n,
+  output wire         can_mode,
+
+  output reg  [7:0]   core_dis_data,
+  output reg          core_dis_data_wr,
 
   //* left for packet process;
   output wire         mem_wren,
@@ -56,9 +63,8 @@ module um_for_cpu(
   (* mark_debug = "true"*)wire [31:0]   peri_rdata;
   (* mark_debug = "true"*)wire          peri_ready;
   reg   [31:0]    irq_bitmap;
-  // (* mark_debug = "true"*)wire          data_valid_confMem;
-  // (* mark_debug = "true"*)wire [133:0]  data_confMem;
-  // fifo interface
+
+  //* fifo interface for uart;
   reg           rden_uart;
   wire [7:0]    dout_uart_8b;
   wire          empty_uart;
@@ -88,12 +94,6 @@ module um_for_cpu(
     .peri_rdata(peri_rdata),
     .peri_ready(peri_ready),
     .irq_bitmap(irq_bitmap)
-
-    // .print_valid(print_valid),
-    // .print_value(print_value),
-
-    // .key_in(key_in),
-    // .led_out(led_out)
   );
 
   conf_mem confMem(
@@ -178,6 +178,7 @@ module um_for_cpu(
   //* uart controller
   reg [3:0]   cnt_wait_clk;
   reg         tag_has_gen_irq_uart;
+  (* mark_debug = "true"*)reg         uart_ready;
   always @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
       // reset
@@ -187,20 +188,28 @@ module um_for_cpu(
       addr_32b_wr     <= 32'b0;
       cnt_wait_clk    <= 4'b0;
       irq_bitmap[4]   <= 1'b0;
+      {irq_bitmap[31:6],irq_bitmap[2:0]}  <= 29'b0;
       tag_has_gen_irq_uart <= 1'b0;
+      uart_ready      <= 1'b0;
     end
     else begin
       irq_bitmap[4]   <= 1'b0;
       rden_uart       <= 1'b0;
       wren_i          <= 1'b0;
+      uart_ready      <= 1'b0;
       cnt_wait_clk    <= 4'b1 + cnt_wait_clk;
       
       //* write uart;
       if(empty_uart == 1'b0 && cnt_wait_clk == 4'b0) begin
         rden_uart     <= 1'b1;
         wren_i        <= 1'b1;
-        addr_32b_wr   <= 32'h10010004;
+        addr_32b_wr   <= {`BASE_ADDR_UART,16'h0004};
         din_32b_i     <= {24'b0,dout_uart_8b};
+      end
+      //* uart write controlled by host (write just once);
+      else if(peri_addr[31:16] == `BASE_ADDR_UART && peri_wren == 1'b1 && uart_ready == 1'b0) begin 
+        uart_ready    <= 1'b1;
+        wren_i        <= 1'b1;
       end
       //* irq[4];
       if(interrupt_o == 1'b1 && tag_has_gen_irq_uart == 1'b0) begin
@@ -213,12 +222,28 @@ module um_for_cpu(
     end
   end
 
-  //* uart read;
-  assign rden_i = (peri_addr[31:16] == 16'h1100 && wren_i == 1'b0 && dout_32b_valid_o == 1'b0)? peri_rden: 1'b0;
-  assign addr_32b_i = (wren_i == 1'b1)? addr_32b_wr:{16'h1001,peri_addr[15:0]};
+  //* uart read (read just once);
+  assign rden_i = (peri_addr[31:16] == `BASE_ADDR_UART && wren_i == 1'b0 && dout_32b_valid_o == 1'b0)? peri_rden: 1'b0;
+  assign addr_32b_i = (rden_uart == 1'b1)? addr_32b_wr:{`BASE_ADDR_UART,peri_addr[15:0]};
 //***************************************uart***********************************//
 
 //***************************************gpio***********************************//
+  (* mark_debug = "true"*)reg         mem_ready_gpio;
+  //* gpio_led;
+  always @(posedge clk or negedge rst_n) begin
+    if (!rst_n) begin
+      led_out                   <= 1'b0;
+      mem_ready_gpio            <= 1'b0;
+    end
+    else begin
+      if(peri_wren == 1'b1 && peri_addr == {`BASE_ADDR_GPIO,16'h0008} && pre_men_wren == 1'b0) begin
+          led_out               <= ~led_out;
+      end
+      mem_ready_gpio <= ((peri_addr[31:16] == `BASE_ADDR_GPIO) && 
+        mem_ready_gpio == 1'b0)? (peri_wren|peri_rden): 1'b0; //* printf, gpio;
+      //* Noted: mem_ready_gpio is valid after reading/writing gpio;
+    end
+  end
   //* gpio_key;
   `ifdef GPIO_KEY
     //* peripheral
@@ -226,23 +251,20 @@ module um_for_cpu(
     //* key_status is four keys' status, read address is 32'h10000004;
     (* mark_debug = "true"*)reg [3:0]   key_status, pre_key[3:0];
     (* mark_debug = "true"*)reg [31:0]  mem_rdata_gpio;
-    (* mark_debug = "true"*)reg         mem_ready_gpio;
     reg [7:0]   cnt_irq;
     reg       tag_has_gen_irq_gpio; //* used to gen one clk interrupt;
     integer i;
     always @(posedge clk or negedge rst_n) begin
       if(!rst_n) begin
-        {irq_bitmap[31:5],irq_bitmap[3:0]}  <= 31'b0;
+        irq_bitmap[3]           <= 1'b0;
         key_status              <= 4'b0;
         for(i=0; i<4; i=i+1)
           pre_key[i]            <= 4'b0;
         mem_rdata_gpio          <= 32'b0;
-        mem_ready_gpio          <= 1'b0;
         tag_has_gen_irq_gpio    <= 1'b0;
         cnt_irq                 <= 8'b0;
       end
       else begin
-        mem_ready_gpio          <= 1'b0;
         for(i=0; i<4; i=i+1)
           pre_key[i]            <= {pre_key[i][2:0],key_in[i]};
         irq_bitmap[3]           <= 1'b0;
@@ -262,28 +284,12 @@ module um_for_cpu(
         end
 
         //* read key_status after generating interrupt;
-        if(peri_rden == 1'b1 && peri_addr == 32'h10000004 && mem_ready_gpio == 1'b0) begin
+        if(peri_rden == 1'b1 && peri_addr == {`BASE_ADDR_GPIO,16'h0004} && mem_ready_gpio == 1'b0) begin
           mem_rdata_gpio        <= {16'b0,cnt_irq,4'b0,key_status};
-          mem_ready_gpio        <= 1'b1;
         end
-        mem_ready_gpio <= ((peri_addr[31:16] == 16'h1000) && 
-          mem_ready_gpio == 1'b0)? (peri_wren|peri_rden): 1'b0; //* printf, gpio;
-        //* Noted: mem_ready_gpio is valid after reading/writing gpio;
       end
     end
   `endif
-
-  //* gpio_led;
-  always @(posedge clk or negedge rst_n) begin
-    if (!rst_n) begin
-      led_out                   <= 1'b0;
-    end
-    else begin
-      if(peri_wren == 1'b1 && peri_addr == 32'h10000008 && pre_men_wren == 1'b0) begin
-          led_out               <= ~led_out;
-      end
-    end
-  end
 //***************************************gpio***********************************//
   
 //***************************************can************************************//
@@ -318,7 +324,9 @@ module um_for_cpu(
     );
 
     //* can controller
-    reg           tag_rd_wr_can;
+    (* mark_debug = "true"*)reg           tag_rd_wr_can;
+    (* mark_debug = "true"*)reg           tag_has_gen_irq_can, temp_can_intr_n;
+    (* mark_debug = "true"*)reg   [10:0]  cnt_to_release;
     always @(posedge clk or negedge rst_n) begin
       if(!rst_n) begin
         addr_32b_can        <= 32'b0;
@@ -326,23 +334,61 @@ module um_for_cpu(
         rden_can            <= 1'b0;
         din_32b_can         <= 32'b0;
         tag_rd_wr_can       <= 1'b0;
+        tag_has_gen_irq_can <= 1'b0;
+        irq_bitmap[5]       <= 1'b0;
+        temp_can_intr_n     <= 1'b1;
+        cnt_to_release      <= 11'b0;
       end
       else begin
+        temp_can_intr_n     <= can_int_n;
+
+        irq_bitmap[5]       <= 1'b0;
         wren_can            <= 1'b0;
         rden_can            <= 1'b0;
         addr_32b_can        <= peri_addr;
         din_32b_can         <= peri_wdata;
-        if(peri_addr[31:16] == 16'h1100 && tag_rd_wr_can == 1'b0) begin
-          wren_can          <= wren_i;
-          rden_can          <= rden_i;
+        if(peri_addr[31:16] == `BASE_ADDR_CAN && tag_rd_wr_can == 1'b0 && (peri_wren|peri_rden)) begin
+          wren_can          <= peri_wren;
+          rden_can          <= peri_rden;
           tag_rd_wr_can     <= 1'b1;
         end
         else if(dout_32b_valid_can == 1'b1)
           tag_rd_wr_can     <= 1'b0;
+
+        //* gen interrupt for can;
+        cnt_to_release      <= 11'd1 + cnt_to_release;
+        if(tag_has_gen_irq_can == 1'b0 && can_int_n == 1'b0) begin
+          tag_has_gen_irq_can <= 1'b1;
+          irq_bitmap[5]       <= 1'b1;
+          cnt_to_release      <= 11'b0;
+        end
+        // else if(can_int_n == 1'b1) begin
+        else if(can_int_n == 1'b1 || cnt_to_release[10] == 1'b1) begin
+          tag_has_gen_irq_can <= 1'b0;
+        end
       end
     end
   `endif
 //***************************************can************************************//
+
+//***************************************lcd************************************//
+  `ifdef LCD
+    always @(posedge clk or negedge rst_n) begin
+      if(!rst_n) begin
+        core_dis_data_wr      <= 1'b0;
+        core_dis_data         <= 8'b0;
+      end
+      else begin
+        core_dis_data_wr      <= 1'b0;
+        //* write distance data, ready signal is shared with mem_ready_gpio;
+        if(peri_wren == 1'b1 && peri_addr == {`BASE_ADDR_GPIO,16'h000C} && mem_ready_gpio == 1'b0) begin
+          core_dis_data_wr    <= 1'b1;
+          core_dis_data       <= peri_wdata[7:0];
+        end
+      end
+    end
+  `endif
+//***************************************lcd************************************//
 
   //* dmux;
   // always @(posedge clk or negedge rst_n) begin
@@ -359,21 +405,22 @@ module um_for_cpu(
   //* dmux between uart and gpio_key;
   `ifdef GPIO_KEY
     `ifdef CAN  //* GPIO_KEY + CAN + UART
-      assign peri_ready = dout_32b_valid_o|mem_ready_gpio|dout_32b_valid_can;
+      assign peri_ready = (peri_addr[31:16] == 16'h1000)? (peri_wren|peri_rden): dout_32b_valid_o|uart_ready|mem_ready_gpio|dout_32b_valid_can;
       assign peri_rdata = (dout_32b_valid_o == 1'b1)? dout_32b_o: 
                           (dout_32b_valid_can == 1'b1)? dout_32b_can: mem_rdata_gpio;
     `else       //* GPIO_KEY + UART
-      assign peri_ready = dout_32b_valid_o|mem_ready_gpio;
+      assign peri_ready = (peri_addr[31:16] == 16'h1000)? (peri_wren|peri_rden): dout_32b_valid_o|uart_ready|mem_ready_gpio;
       assign peri_rdata = (dout_32b_valid_o == 1'b1)? dout_32b_o: mem_rdata_gpio;
     `endif
   `else
     `ifdef CAN  //* CAN + UART
-      assign peri_ready = dout_32b_valid_o|dout_32b_valid_can;
+      assign peri_ready = (peri_addr[31:16] == 16'h1000)? (peri_wren|peri_rden): dout_32b_valid_o|uart_ready|dout_32b_valid_can|mem_ready_gpio;
       assign peri_rdata = (dout_32b_valid_o == 1'b1)? dout_32b_o: dout_32b_can;
     `else       //* just UART
       //* assign with uart's rdata;
-      assign peri_ready = (peri_addr[31:16] == 16'h1000)? (peri_wren|peri_rden): dout_32b_valid_o;
+      assign peri_ready = (peri_addr[31:16] == 16'h1000)? (peri_wren|peri_rden): dout_32b_valid_o|uart_ready|mem_ready_gpio;
       assign peri_rdata = dout_32b_o;
     `endif
   `endif
+
 endmodule    

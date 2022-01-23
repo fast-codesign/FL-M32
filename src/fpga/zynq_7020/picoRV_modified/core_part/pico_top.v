@@ -46,6 +46,7 @@ module pico_top(
 
   (* mark_debug = "true"*)wire        trap;
 
+// picorv32_simplified_wo_ctrlirq picorv32(
 picorv32_simplified picorv32(
   .clk(clk),
   .resetn(resetn&~conf_sel&finish_tag),
