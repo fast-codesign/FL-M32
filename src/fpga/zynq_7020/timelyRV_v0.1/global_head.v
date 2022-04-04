@@ -24,3 +24,6 @@
 
 //* instr/data memory size
 `define MEM_128KB //* default is 64KB;
+
+//* nic's mac address;
+`define NIC_MAC_ADDR 48'h000a_3500_0102

@@ -98,11 +98,18 @@ always @(posedge clk or negedge rst_n) begin
   else begin
     //* 1) recv pkt (write fifo_recv), and calculate length;
     //* 2) discard CPU configuration packets (0x90..);
+    //* 3) filter pkt 
       din_pktRecv           <= data_in;
       if(data_in_valid == 1'b1 && data_in[133:132] == 2'b01 &&
         data_in[31:24] != 8'h90 && tag[0][0] == 1'b0) 
       begin
-        wren_pktRecv        <= 1'b1;
+        `ifdef FILT_PKT_WITH_MAC
+          if(data_in[127:80] == `NIC_MAC_ADDR || 
+            (&data_in[127:80]) == 1'b1)
+              wren_pktRecv  <= 1'b1;
+        `else
+          wren_pktRecv      <= 1'b1;
+        `endif
         length[0]           <= 16'b0;
       end
       else begin
