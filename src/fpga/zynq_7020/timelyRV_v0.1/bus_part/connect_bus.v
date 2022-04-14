@@ -108,6 +108,34 @@ module connect_bus(
         if(dout_32b_valid_i[`PKT] == 1'b1)
           peri_rdata_o            <= dout_32b_i[`PKT*32+:32];
       `endif
+
+      `ifdef RS485_0
+        //* RS485
+        if(peri_addr_i[31:16] == `BASE_ADDR_RS485_0) begin
+          wren_o[`RS485_0]            <= peri_wren_i&(~pre_wr_rd[`RS485_0]);
+          rden_o[`RS485_0]            <= peri_rden_i&(~pre_wr_rd[`RS485_0]);
+          addr_32b_o[`RS485_0*32+:32] <= peri_addr_i;
+          din_32b_o[`RS485_0*32+:32]  <= peri_wdata_i;
+          wstrb_o[`RS485_0*4+:4]      <= peri_wstrb_i;
+          pre_wr_rd[`RS485_0]         <= peri_wren_i|peri_rden_i;
+        end
+        if(dout_32b_valid_i[`RS485_0] == 1'b1)
+          peri_rdata_o                <= dout_32b_i[`RS485_0*32+:32];
+      `endif
+
+      `ifdef RS485_1
+        //* RS485
+        if(peri_addr_i[31:16] == `BASE_ADDR_RS485_1) begin
+          wren_o[`RS485_1]            <= peri_wren_i&(~pre_wr_rd[`RS485_1]);
+          rden_o[`RS485_1]            <= peri_rden_i&(~pre_wr_rd[`RS485_1]);
+          addr_32b_o[`RS485_1*32+:32] <= peri_addr_i;
+          din_32b_o[`RS485_1*32+:32]  <= peri_wdata_i;
+          wstrb_o[`RS485_1*4+:4]      <= peri_wstrb_i;
+          pre_wr_rd[`RS485_1]         <= peri_wren_i|peri_rden_i;
+        end
+        if(dout_32b_valid_i[`RS485_1] == 1'b1)
+          peri_rdata_o                <= dout_32b_i[`RS485_1*32+:32];
+      `endif
     end
   end
 

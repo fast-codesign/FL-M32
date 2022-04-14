@@ -46,6 +46,18 @@ module um_for_cpu(
   ,output  wire  [7:0] lcd_g      //* lcd green;
   ,output  wire  [7:0] lcd_b      //* lcd blue;
 `endif
+
+`ifdef RS485_0
+  ,input               rs485_rx_0
+  ,output wire         rs485_tx_0
+  ,output              rs485_de_0
+`endif
+
+`ifdef RS485_1
+  ,input               rs485_rx_1
+  ,output wire         rs485_tx_1
+  ,output              rs485_de_1
+`endif
 );
 
   //* wire
@@ -227,6 +239,43 @@ module um_for_cpu(
   );
 `endif
 
+`ifdef RS485_0
+  rs485 rs485_inst_0(
+    .clk_i        (clk                          ),
+    .rst_n_i      (rst_n                        ),
+    
+    .rs485_tx_o   (rs485_tx_0                   ),
+    .rs485_rx_i   (rs485_rx_0                   ),
+    .rs485_de_o   (rs485_de_0                   ),
+    
+    .addr_32b_i   (addr_32b_p[`RS485_0*32+:32]  ),
+    .wren_i       (wren_p[`RS485_0]             ),
+    .rden_i       (rden_p[`RS485_0]             ),
+    .din_32b_i    (din_32b_p[`RS485_0*32+:32]   ),
+    .dout_32b_o   (dout_32b_p[`RS485_0*32+:32]  ),
+    .dout_32b_valid_o(dout_32b_valid_p[`RS485_0]),
+    .interrupt_o  (interrupt_p[`RS485_0]        )
+  );
+`endif
+
+`ifdef RS485_1
+  rs485 rs485_inst_1(
+    .clk_i        (clk                          ),
+    .rst_n_i      (rst_n                        ),
+    
+    .rs485_tx_o   (rs485_tx_1                   ),
+    .rs485_rx_i   (rs485_rx_1                   ),
+    .rs485_de_o   (rs485_de_1                   ),
+    
+    .addr_32b_i   (addr_32b_p[`RS485_1*32+:32]  ),
+    .wren_i       (wren_p[`RS485_1]             ),
+    .rden_i       (rden_p[`RS485_1]             ),
+    .din_32b_i    (din_32b_p[`RS485_1*32+:32]   ),
+    .dout_32b_o   (dout_32b_p[`RS485_1*32+:32]  ),
+    .dout_32b_valid_o(dout_32b_valid_p[`RS485_1]),
+    .interrupt_o  (interrupt_p[`RS485_1]        )
+  );
+`endif
 
 //***************************************pkt dmux***********************************//
   //* output pkt;

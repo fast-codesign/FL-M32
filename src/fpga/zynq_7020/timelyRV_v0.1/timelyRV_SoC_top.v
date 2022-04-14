@@ -67,6 +67,20 @@ module timelyRV_SoC_top(
   ,output  wire  [7:0] lcd_g      //* lcd green;
   ,output  wire  [7:0] lcd_b       //* lcd blue;
 `endif
+
+`ifdef RS485_0
+  //* rs485
+  ,input               rs485_rx_0
+  ,output wire         rs485_tx_0
+  ,output              rs485_de_0
+`endif
+
+`ifdef RS485_1
+  //* rs485
+  ,input               rs485_rx_1
+  ,output wire         rs485_tx_1
+  ,output              rs485_de_1
+`endif
 );
 
   assign uart_rts   = 1'b0;       //* host can send to fpga anytime;
@@ -168,6 +182,18 @@ module timelyRV_SoC_top(
       .lcd_r      (lcd_r              ),
       .lcd_g      (lcd_g              ),
       .lcd_b      (lcd_b              ),
+    `endif
+
+    `ifdef RS485_0
+      .rs485_rx_0 (rs485_rx_0         ),
+      .rs485_tx_0 (rs485_tx_0         ),
+      .rs485_de_0 (rs485_de_0         ),
+    `endif
+
+    `ifdef RS485_1
+      .rs485_rx_1 (rs485_rx_1         ),
+      .rs485_tx_1 (rs485_tx_1         ),
+      .rs485_de_1 (rs485_de_1         ),
     `endif
 
     //* uart;

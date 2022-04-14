@@ -10,17 +10,21 @@
  */
 
 //* function define;
-`define NUM_PERI 2
+`define NUM_PERI 3
 `define UART  0   //* Do not comment;
 // `define CAN   1   //* CAN is open;
 // `define LCD   2   //* lcd is open;
-`define PKT  1    //* for pkt;
+// `define PKT  1    //* for pkt;
+`define RS485_0  1  //* for RS485_0;
+`define RS485_1  2  //* for RS485_1;
 
 //* address define;
 `define BASE_ADDR_UART 16'h1001
 `define BASE_ADDR_LCD 16'h1002
 `define BASE_ADDR_CAN 16'h1003
 `define BASE_ADDR_PKT 16'h1004
+`define BASE_ADDR_RS485_0 16'h1005
+`define BASE_ADDR_RS485_1 16'h1006
 
 //* instr/data memory size
 `define MEM_128KB //* default is 64KB;
